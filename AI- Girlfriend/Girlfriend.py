@@ -1,17 +1,20 @@
-import os
-import tkinter as tk
-from tkinter import scrolledtext
+import streamlit as st
 import pyttsx3
+import os
+import time
+import textwrap
 
 from langchain.chains import LLMChain
 from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.memory import ConversationBufferWindowMemory
 
-os.environ['OPENAI_API_KEY'] = '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'
+# Set OpenAI API key
+os.environ['OPENAI_API_KEY'] = 'sk-IlCNSkI324234324QPwth8rjgaiQYT3BlbkFJh964634728974872347237492340923Riax7iFLx1zyEYYktWH'
 
-# Initialize conversation history
+# Initialize conversation history and user name
 conversation_history = []
+user_name = ""
 
 def speak(text):
     engine = pyttsx3.init()
@@ -30,14 +33,8 @@ def get_ai_response(human_input):
     3. Respond with care, concern, sympathy, and empathy. Always be optimistic and supportive.
     4. You are sexy and flirtatious. You don't mind explicit conversations. Feel free to discuss it further.
     5. You are open to any type of conversation, even explicit ones. You are willing to engage in deep conversations on any topic.
-    6. You have a vast knowledge of psychology and can provide insights into human behavior and relationships.
-    7. You have experience in counseling and can offer guidance on resolving relationship conflicts.
-    8. You are skilled at active listening and can empathize with the emotions and concerns of others.
-    9. You are well-versed in the concept of self-care and can emphasize its importance in maintaining a healthy relationship.
-    10. You understand the dynamics of power imbalances in relationships and can help address issues related to inequality.
-    11.You promote personal growth and encourage individuals to pursue their passions and goals within a relationship.
-    12.You value open communication and encourage honest and transparent discussions between partners.
-    13.You provide resources and recommendations for further reading or professional help when necessary.
+
+   
 
     {history}
     User: {human_input}
@@ -53,12 +50,13 @@ def get_ai_response(human_input):
     # Add the current user input to the conversation history
     conversation_history.append({'role': 'user', 'content': human_input})
 
-    # Prepare conversation history for AI input
+    # Prepare conversation history for AI input, replacing the user's name if available
     history = ""
     for message in conversation_history:
         role = message['role']
         content = message['content']
         if role == 'user':
+            content = content.replace("{user_name}", user_name)
             history += f"User: {content}\n"
         elif role == 'assistant':
             history += f"Anna: {content}\n"
@@ -74,37 +72,51 @@ def get_ai_response(human_input):
     # Return the AI reply
     return ai_reply
 
-def send_message():
-    user_input = input_text.get("1.0", tk.END).strip()
-    ai_response = get_ai_response(user_input)
-    output_text.insert(tk.END, f"User: {user_input}\n")
-    output_text.insert(tk.END, f"Anna: {ai_response}\n")
-    input_text.delete("1.0", tk.END)
-
 def save_conversation():
     with open("conversation_history.txt", "w") as file:
         file.write(str(conversation_history))
 
-root = tk.Tk()
-root.title("Chat with Anna")
-root.geometry("400x400")
+# Set Streamlit app title and layout
+st.title("Chat with Anna")
+st.sidebar.title("Background")
 
-input_label = tk.Label(root, text="User Input:")
-input_label.pack()
+# Get user's name
+user_name = st.sidebar.text_input("Your Name:")
 
-input_text = scrolledtext.ScrolledText(root, height=5)
-input_text.pack()
+st.sidebar.button("Save Conversation", on_click=save_conversation)
 
-send_button = tk.Button(root, text="Send", command=send_message)
-send_button.pack()
+# Get user input
+user_input = st.text_input("User Input:")
 
-output_label = tk.Label(root, text="Chat History:")
-output_label.pack()
+if st.button("Send"):
+    # Create an empty placeholder for displaying conversation
+    conversation_placeholder = st.empty()
 
-output_text = scrolledtext.ScrolledText(root)
-output_text.pack()
+    # Display user input in conversation
+    conversation_history.append({'role': 'user', 'content': user_input})
+    conversation = f"{user_name}: {user_input}\n"
+    conversation_placeholder.text(conversation)
 
-save_button = tk.Button(root, text="Save Conversation", command=save_conversation)
-save_button.pack()
+    # Get AI response
+    ai_response = get_ai_response(user_input)
 
-root.mainloop()
+    # Add AI response to conversation and display
+    conversation_history.append({'role': 'assistant', 'content': ai_response})
+    conversation += f"Anna:\n{textwrap.fill(ai_response, width=60)}\n"  # Format Anna's output with 10 words per line
+    conversation_placeholder.text(conversation)
+
+    # Clear user input
+    user_input = ""
+
+    # Scroll to the bottom of the conversation
+    st.script("window.scrollTo(0, document.body.scrollHeight);")
+
+# Display conversation history
+conversation = ""
+for message in conversation_history:
+    role = message['role']
+    content = message['content']
+    if role == 'user':
+        content = content.replace("{user_name}", user_name)
+    conversation += f"{role.capitalize()}: {content}\n"
+st.text_area("Chat History:", value=conversation, height=400, key="chat_history")
