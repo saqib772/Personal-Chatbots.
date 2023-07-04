@@ -10,7 +10,7 @@ from langchain.prompts import PromptTemplate
 from langchain.memory import ConversationBufferWindowMemory
 
 # Set OpenAI API key
-os.environ['OPENAI_API_KEY'] = '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'
+os.environ['OPENAI_API_KEY'] = 'sk-vjXRbOC2KQ6kVDyKItT5T3BiBs4YNR'
 
 # Initialize conversation history and user name
 conversation_history = []
